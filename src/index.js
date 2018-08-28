@@ -122,6 +122,59 @@ export default class HitBTC {
       .catch(get(`response.data`));
   }
 
+  requestPayment = (endpoint, method, params = {}) => {
+    if (!this.key || !this.secret) {
+      throw new Error(
+        `API key and secret key required to use authenticated methods`,
+      );
+    }
+
+    const path = `/api/1/payment${endpoint}`;
+
+    // All requests include these
+    const authParams = {
+      apikey: this.key,
+      nonce: Date.now(),
+    };
+
+    // If this is a GET request, all params go in the URL.
+    // Otherwise, only the auth-related ones do.
+    const requestPath = uri(path,
+      method === `get` ?
+        { ...authParams, ...params } :
+        authParams,
+    );
+
+    const requestUrl = `${this.baseUrl}${requestPath}`;
+
+    // Compute the message to encrypt for the signature.
+    const message =
+      method === `get` ?
+        requestPath :
+        `${requestPath}${stringify(params)}`;
+
+    const signature = crypto
+      .createHmac(`sha512`, this.secret)
+      .update(message)
+      .digest(`hex`);
+
+    const config = {
+      headers: {
+        'X-Signature': signature,
+      },
+    };
+
+    // Figure out the arguments to pass to axios.
+    const args =
+      method === `get` ?
+        [config] :
+        [stringify(params), config];
+
+    return axios[method](requestUrl, ...args)
+      .then(get(`data`))
+      .catch(get(`response.data`));
+  }
+
   getMyBalance = () =>
     this.requestTrading(`/balance`, `get`, {})
       .then(formatBalanceData);
@@ -165,4 +218,7 @@ export default class HitBTC {
       sort: `desc`,
       ...params,
     });
+
+  getListPaymentTransactions = () => this.requestPayment(`/transactions`, `get`);
+  getListBalanceOfTheMainAccount = () => this.requestPayment(`/balance`, `get`, {})
 }

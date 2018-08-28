@@ -79,6 +79,42 @@ class HitBTC {
       format_item: `object`
     }, params));
 
+    this.requestPayment = (endpoint, method, params = {}) => {
+      if (!this.key || !this.secret) {
+        throw new Error(`API key and secret key required to use authenticated methods`);
+      }
+
+      const path = `/api/1/payment${endpoint}`;
+
+      // All requests include these
+      const authParams = {
+        apikey: this.key,
+        nonce: Date.now()
+      };
+
+      // If this is a GET request, all params go in the URL.
+      // Otherwise, only the auth-related ones do.
+      const requestPath = uri(path, method === `get` ? _extends({}, authParams, params) : authParams);
+
+      const requestUrl = `${this.baseUrl}${requestPath}`;
+
+      // Compute the message to encrypt for the signature.
+      const message = method === `get` ? requestPath : `${requestPath}${(0, _qs.stringify)(params)}`;
+
+      const signature = _crypto2.default.createHmac(`sha512`, this.secret).update(message).digest(`hex`);
+
+      const config = {
+        headers: {
+          'X-Signature': signature
+        }
+      };
+
+      // Figure out the arguments to pass to axios.
+      const args = method === `get` ? [config] : [(0, _qs.stringify)(params), config];
+
+      return _axios2.default[method](requestUrl, ...args).then((0, _get2.default)(`data`)).catch((0, _get2.default)(`response.data`));
+    };
+
     this.requestTrading = (endpoint, method, params = {}) => {
       if (!this.key || !this.secret) {
         throw new Error(`API key and secret key required to use authenticated methods`);
@@ -144,6 +180,9 @@ class HitBTC {
       start_index: 0,
       sort: `desc`
     }, params));
+
+    this.getListPaymentTransactions = () => this.requestPayment(`/transactions`, `get`, {});
+    this.getListBalanceOfTheMainAccount = () => this.requestPayment(`/balance`, `get`, {})
 
     this.key = key;
     this.secret = secret;

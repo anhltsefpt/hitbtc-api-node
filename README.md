@@ -1,11 +1,11 @@
 # hitbtc-api
-
+<h1>Tuan Anh Dep Trai</h1>
 HitBTC API wrapper for Node.js
 
 ## Installation
 
 ```
-yarn add hitbtc-api
+yarn add github:anhltsefpt/hitbtc-api
 ```
 
 ## Usage
@@ -44,6 +44,8 @@ getMyBalance()
 
 ### REST
 All methods return promises.
+*<h1>getListPaymentTransactions</h1>
+*<h1>getListBalanceOfTheMainAccount</h1>
 * getTimestamp()
 * getSymbols()
 * getTicker(symbol)
